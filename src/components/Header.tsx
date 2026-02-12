@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { config } from '../config'
 import { useTranslation } from '../i18n/useTranslation'
 
@@ -8,6 +9,7 @@ interface HeaderProps {
 
 export default function Header({ customerName, onLogout }: HeaderProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -16,6 +18,12 @@ export default function Header({ customerName, onLogout }: HeaderProps) {
         {customerName && (
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{t('header.hello')} {customerName}</span>
+            <button
+              onClick={() => navigate('/perfil')}
+              className="text-sm text-gray-500 hover:text-gray-700 underline"
+            >
+              {t('header.profile')}
+            </button>
             <button
               onClick={onLogout}
               className="text-sm text-gray-500 hover:text-gray-700 underline"

@@ -67,3 +67,24 @@ export async function confirmExtension(bookingId: string, data: {
     body: JSON.stringify(data)
   })
 }
+
+// Profile
+export async function getProfile(customerId: string) {
+  return request(`/profile/${customerId}`)
+}
+
+export async function updateProfile(customerId: string, data: {
+  firstName?: string; lastName?: string; phone?: string;
+  address?: string; postalCode?: string; city?: string; country?: string; language?: string
+}) {
+  return request(`/profile/${customerId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  })
+}
+
+export async function requestDataDeletion(customerId: string) {
+  return request(`/profile/${customerId}/delete-request`, {
+    method: 'POST'
+  })
+}

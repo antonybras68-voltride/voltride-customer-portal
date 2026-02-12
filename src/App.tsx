@@ -1,3 +1,4 @@
+import ProfilePage from './pages/ProfilePage'
 import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
@@ -59,6 +60,7 @@ function App() {
             <Route path="/reservas/:id" element={<BookingDetail customer={customer} onLogout={handleLogout} />} />
             <Route path="/reservas/:id/modificar" element={<ModifyBooking customer={customer} onLogout={handleLogout} />} />
             <Route path="/reservas/:id/prolongar" element={<ExtendBooking customer={customer} onLogout={handleLogout} />} />
+            <Route path="/perfil" element={<ProfilePage customer={customer} onLogout={handleLogout} />} />
             <Route path="*" element={<Navigate to="/reservas" />} />
           </>
         )}

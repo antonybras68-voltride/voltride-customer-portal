@@ -5,7 +5,7 @@ import { mockBookings } from '../mock/data'
 import { useTranslation } from '../i18n/useTranslation'
 
 interface BookingsPageProps {
-  customer: { id: number; firstName: string; lastName: string; email: string }
+  customer: { id: string; firstName: string; lastName: string; email: string }
   onLogout: () => void
 }
 

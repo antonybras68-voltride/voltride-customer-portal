@@ -1,11 +1,12 @@
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import StatusBadge from '../components/StatusBadge'
-import { mockBookings } from '../mock/data'
 import { useTranslation } from '../i18n/useTranslation'
+import { getBookingDetail, cancelBooking } from '../api'
 
 interface BookingDetailProps {
-  customer: { id: number; firstName: string; lastName: string; email: string }
+  customer: { id: string; firstName: string; lastName: string; email: string }
   onLogout: () => void
 }
 
@@ -13,14 +14,51 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
   const { id } = useParams()
   const navigate = useNavigate()
   const { t, formatDate } = useTranslation()
-  const booking = mockBookings.find(b => b.id === Number(id))
+  const [booking, setBooking] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [cancelling, setCancelling] = useState(false)
 
-  if (!booking) {
+  useEffect(() => {
+    const fetchBooking = async () => {
+      try {
+        const data = await getBookingDetail(id!)
+        setBooking(data)
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchBooking()
+  }, [id])
+
+  const getVehicleName = (b: any) => {
+    const name = b.fleetVehicle?.vehicle?.name
+    if (!name) return 'Véhicule'
+    if (typeof name === 'string') {
+      try { return JSON.parse(name).es || name } catch { return name }
+    }
+    return name.es || name.en || name.fr || 'Véhicule'
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header customerName={customer.firstName} onLogout={onLogout} />
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <p className="text-gray-500">{t('detail.notFound')}</p>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!booking || error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header customerName={customer.firstName} onLogout={onLogout} />
+        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+          <p className="text-gray-500">{error || t('detail.notFound')}</p>
           <button onClick={() => navigate('/reservas')} className="mt-4 text-[#ffaf10] underline">
             {t('detail.backToList')}
           </button>
@@ -37,6 +75,26 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
   const hoursBeforeStart = (startDateTime.getTime() - new Date().getTime()) / (1000 * 60 * 60)
   const refundable = hoursBeforeStart >= 48
 
+  const handleCancel = async () => {
+    const message = refundable
+      ? `${t('detail.cancelRefund')} ${booking.paidAmount}€`
+      : `${t('detail.cancelNoRefund')} ${booking.paidAmount}€ ${t('detail.cancelNoRefundEnd')}`
+    if (!confirm(message + `\n\n${t('detail.cancelConfirm')}`)) return
+
+    setCancelling(true)
+    try {
+      await cancelBooking(booking.id)
+      alert(t('detail.cancelDone'))
+      // Recharger les données
+      const updated = await getBookingDetail(id!)
+      setBooking(updated)
+    } catch (err: any) {
+      alert(err.message || 'Error')
+    } finally {
+      setCancelling(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header customerName={customer.firstName} onLogout={onLogout} />
@@ -48,7 +106,7 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h1 className="text-xl font-bold text-gray-800">{booking.fleetVehicle.vehicle.name.es}</h1>
+              <h1 className="text-xl font-bold text-gray-800">{getVehicleName(booking)}</h1>
               <p className="text-sm text-gray-500">{t('bookings.ref')} {booking.reference}</p>
             </div>
             <StatusBadge status={booking.checkedIn && !booking.checkedOut ? 'IN_PROGRESS' : booking.status} />
@@ -77,22 +135,51 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
             </div>
           </div>
 
-          {booking.options.length > 0 && (
+          {booking.options && booking.options.length > 0 && (
             <div className="mb-6">
               <h3 className="font-semibold text-gray-700 mb-2">{t('detail.options')}</h3>
-              {booking.options.map((opt, i) => (
-                <div key={i} className="flex justify-between text-sm py-1">
-                  <span className="text-gray-600">{opt.option.name} x{opt.quantity}</span>
-                  <span>{opt.totalPrice}€</span>
-                </div>
-              ))}
+              {booking.options.map((opt: any, i: number) => {
+                const optName = opt.option?.name
+                let displayName = 'Option'
+                if (optName) {
+                  if (typeof optName === 'string') {
+                    try { displayName = JSON.parse(optName).es || optName } catch { displayName = optName }
+                  } else {
+                    displayName = optName.es || optName.en || 'Option'
+                  }
+                }
+                return (
+                  <div key={i} className="flex justify-between text-sm py-1">
+                    <span className="text-gray-600">{displayName} x{opt.quantity}</span>
+                    <span>{opt.totalPrice}€</span>
+                  </div>
+                )
+              })}
             </div>
           )}
 
-          {booking.contract && (
-            <button className="w-full py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 mb-3">
+          {booking.contract?.contractPdfUrl && (
+            <a
+              href={booking.contract.contractPdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 mb-3 text-center"
+            >
               {t('detail.downloadContract')} ({booking.contract.contractNumber})
-            </button>
+            </a>
+          )}
+
+          {/* Extensions passées */}
+          {booking.contract?.extensions && booking.contract.extensions.length > 0 && (
+            <div className="mb-6 bg-blue-50 rounded-xl p-4">
+              <h3 className="font-semibold text-blue-800 mb-2">{t('detail.extensions') || 'Extensions'}</h3>
+              {booking.contract.extensions.map((ext: any) => (
+                <div key={ext.id} className="flex justify-between text-sm py-1">
+                  <span className="text-blue-700">{ext.extensionNumber} — +{ext.additionalDays}j</span>
+                  <span className="font-medium">{ext.totalAmount}€ ({ext.paymentStatus})</span>
+                </div>
+              ))}
+            </div>
           )}
 
           <div className="space-y-3 mt-4">
@@ -108,17 +195,11 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
               )}
               {canCancel && (
                 <button
-                  onClick={() => {
-                    const message = refundable
-                      ? `${t('detail.cancelRefund')} ${booking.paidAmount}€`
-                      : `${t('detail.cancelNoRefund')} ${booking.paidAmount}€ ${t('detail.cancelNoRefundEnd')}`
-                    if (confirm(message + `\n\n${t('detail.cancelConfirm')}`)) {
-                      alert(t('detail.cancelDone'))
-                    }
-                  }}
-                  className="flex-1 py-3 rounded-lg font-semibold border-2 border-red-400 text-red-500 hover:bg-red-50"
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  className="flex-1 py-3 rounded-lg font-semibold border-2 border-red-400 text-red-500 hover:bg-red-50 disabled:opacity-50"
                 >
-                  {t('detail.cancel')}
+                  {cancelling ? '...' : t('detail.cancel')}
                 </button>
               )}
             </div>

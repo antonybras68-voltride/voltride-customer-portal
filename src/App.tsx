@@ -10,7 +10,7 @@ import { mockBookings } from './mock/data'
 
 function App() {
   const [customer, setCustomer] = useState<{
-    id: number; firstName: string; lastName: string; email: string
+    id: string; firstName: string; lastName: string; email: string
   } | null>(null)
 
   const handleLogout = () => setCustomer(null)

@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
-import { mockBookings } from '../mock/data'
 import { useTranslation } from '../i18n/useTranslation'
+import { getBookingDetail, modifyBooking } from '../api'
 
 interface ModifyBookingProps {
-  customer: { id: number; firstName: string; lastName: string; email: string }
+  customer: { id: string; firstName: string; lastName: string; email: string }
   onLogout: () => void
 }
 
@@ -13,27 +13,67 @@ export default function ModifyBooking({ customer, onLogout }: ModifyBookingProps
   const { id } = useParams()
   const navigate = useNavigate()
   const { t, formatDate } = useTranslation()
-  const booking = mockBookings.find(b => b.id === Number(id))
 
-  const [startDate, setStartDate] = useState(booking?.startDate || '')
-  const [endDate, setEndDate] = useState(booking?.endDate || '')
-  const [startTime, setStartTime] = useState(booking?.startTime || '')
-  const [endTime, setEndTime] = useState(booking?.endTime || '')
-  const [loading, setLoading] = useState(false)
+  const [booking, setBooking] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
 
-  if (!booking) {
+  useEffect(() => {
+    const fetchBooking = async () => {
+      try {
+        const data = await getBookingDetail(id!)
+        setBooking(data)
+        setStartDate(data.startDate)
+        setEndDate(data.endDate)
+        setStartTime(data.startTime)
+        setEndTime(data.endTime)
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchBooking()
+  }, [id])
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header customerName={customer.firstName} onLogout={onLogout} />
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <p className="text-gray-500">{t('detail.notFound')}</p>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!booking || error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header customerName={customer.firstName} onLogout={onLogout} />
+        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+          <p className="text-gray-500">{error || t('detail.notFound')}</p>
           <button onClick={() => navigate('/reservas')} className="mt-4 text-[#ffaf10] underline">
             {t('detail.backToList')}
           </button>
         </div>
       </div>
     )
+  }
+
+  const getVehicleName = (b: any) => {
+    const name = b.fleetVehicle?.vehicle?.name
+    if (!name) return 'Véhicule'
+    if (typeof name === 'string') {
+      try { return JSON.parse(name).es || name } catch { return name }
+    }
+    return name.es || name.en || name.fr || 'Véhicule'
   }
 
   const calculateDays = (start: string, end: string) => {
@@ -53,11 +93,16 @@ export default function ModifyBooking({ customer, onLogout }: ModifyBookingProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
+    setSubmitting(true)
+    setError('')
+    try {
+      await modifyBooking(booking.id, { startDate, endDate, startTime, endTime })
       setSuccess(true)
-    }, 1500)
+    } catch (err: any) {
+      setError(err.message || 'Error')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (success) {
@@ -66,7 +111,7 @@ export default function ModifyBooking({ customer, onLogout }: ModifyBookingProps
         <Header customerName={customer.firstName} onLogout={onLogout} />
         <div className="max-w-md mx-auto px-4 py-16 text-center">
           <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="text-5xl mb-4">OK</div>
+            <div className="text-5xl mb-4">✓</div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">{t('modify.success')}</h2>
             <p className="text-gray-500 mb-2">{t('modify.successMsg')}</p>
             <p className="text-gray-500 mb-6">{t('modify.emailConfirm')}</p>
@@ -107,7 +152,11 @@ export default function ModifyBooking({ customer, onLogout }: ModifyBookingProps
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h1 className="text-xl font-bold text-gray-800 mb-1">{t('modify.title')}</h1>
-          <p className="text-sm text-gray-500 mb-6">{booking.fleetVehicle.vehicle.name.es} — {t('bookings.ref')} {booking.reference}</p>
+          <p className="text-sm text-gray-500 mb-6">{getVehicleName(booking)} — {t('bookings.ref')} {booking.reference}</p>
+
+          {error && (
+            <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{error}</div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
@@ -151,8 +200,8 @@ export default function ModifyBooking({ customer, onLogout }: ModifyBookingProps
               </div>
             )}
 
-            <button type="submit" disabled={!isValid || loading} className="w-full py-3 rounded-lg font-semibold text-white transition-all disabled:opacity-50" style={{ backgroundColor: '#ffaf10' }}>
-              {loading ? t('modify.confirming') : t('modify.confirm')}
+            <button type="submit" disabled={!isValid || submitting} className="w-full py-3 rounded-lg font-semibold text-white transition-all disabled:opacity-50" style={{ backgroundColor: '#ffaf10' }}>
+              {submitting ? t('modify.confirming') : t('modify.confirm')}
             </button>
           </form>
         </div>

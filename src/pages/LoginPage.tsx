@@ -2,9 +2,10 @@ import { useState } from 'react'
 import Header from '../components/Header'
 import { config } from '../config'
 import { useTranslation } from '../i18n/useTranslation'
+import { sendLoginCode, verifyCode } from '../api'
 
 interface LoginPageProps {
-  onLogin: (customer: { id: number; firstName: string; lastName: string; email: string }) => void
+  onLogin: (customer: { id: string; firstName: string; lastName: string; email: string }) => void
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
@@ -19,24 +20,32 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     e.preventDefault()
     setLoading(true)
     setError('')
-    setTimeout(() => {
+    try {
+      await sendLoginCode(email)
       setStep('code')
+    } catch (err: any) {
+      setError(err.message || 'Error')
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (code.length !== 6) {
+      setError(t('login.codeError'))
+      return
+    }
     setLoading(true)
     setError('')
-    setTimeout(() => {
-      if (code.length === 6) {
-        onLogin({ id: 1, firstName: 'Juan', lastName: 'García', email })
-      } else {
-        setError(t('login.codeError'))
-      }
+    try {
+      const data = await verifyCode(email, code)
+      onLogin(data.customer)
+    } catch (err: any) {
+      setError(err.message || 'Error')
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -75,7 +84,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-all"
+                className="w-full py-3 rounded-lg font-semibold text-white transition-all disabled:opacity-50"
                 style={{ backgroundColor: config.accentColor }}
               >
                 {loading ? t('login.sending') : t('login.sendCode')}
@@ -101,7 +110,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-all"
+                className="w-full py-3 rounded-lg font-semibold text-white transition-all disabled:opacity-50"
                 style={{ backgroundColor: config.accentColor }}
               >
                 {loading ? t('login.verifying') : t('login.verify')}

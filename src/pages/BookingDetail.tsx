@@ -69,7 +69,7 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
 
   const canModify = booking.status !== 'CANCELLED' && !booking.checkedIn
   const canCancel = !booking.checkedIn && booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED'
-  const canExtend = booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED' && !booking.checkedOut
+  const canExtend = booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED' && booking.checkedIn && !booking.checkedOut
 
   const startDateTime = new Date(`${booking.startDate}T${booking.startTime}`)
   const hoursBeforeStart = (startDateTime.getTime() - new Date().getTime()) / (1000 * 60 * 60)
@@ -109,7 +109,7 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
               <h1 className="text-xl font-bold text-gray-800">{getVehicleName(booking)}</h1>
               <p className="text-sm text-gray-500">{t('bookings.ref')} {booking.reference}</p>
             </div>
-            <StatusBadge status={booking.checkedIn && !booking.checkedOut ? 'IN_PROGRESS' : booking.status} />
+            <StatusBadge status={booking.checkedIn && booking.checkedIn && !booking.checkedOut ? 'IN_PROGRESS' : booking.status} />
           </div>
 
           <div className="space-y-4 mb-6">

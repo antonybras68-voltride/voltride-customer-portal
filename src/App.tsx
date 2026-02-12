@@ -7,7 +7,6 @@ import BookingDetail from './pages/BookingDetail'
 import ModifyBooking from './pages/ModifyBooking'
 import ExtendBooking from './pages/ExtendBooking'
 import AssistanceButton from './components/AssistanceButton'
-import { mockBookings } from './mock/data'
 
 function App() {
   const [customer, setCustomer] = useState<{
@@ -15,39 +14,6 @@ function App() {
   } | null>(null)
 
   const handleLogout = () => setCustomer(null)
-
-  const getActiveBooking = () => {
-    if (!customer) return null
-
-    const inProgress = mockBookings.find(b => b.checkedIn && !b.checkedOut && b.status !== 'CANCELLED')
-    if (inProgress) {
-      return {
-        reference: inProgress.reference,
-        vehicleName: inProgress.fleetVehicle.vehicle.name.es,
-        startDate: inProgress.startDate,
-        endDate: inProgress.endDate,
-        startTime: inProgress.startTime,
-        endTime: inProgress.endTime,
-      }
-    }
-
-    const upcoming = mockBookings
-      .filter(b => new Date(b.startDate) >= new Date() && b.status === 'CONFIRMED')
-      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-
-    if (upcoming.length > 0) {
-      return {
-        reference: upcoming[0].reference,
-        vehicleName: upcoming[0].fleetVehicle.vehicle.name.es,
-        startDate: upcoming[0].startDate,
-        endDate: upcoming[0].endDate,
-        startTime: upcoming[0].startTime,
-        endTime: upcoming[0].endTime,
-      }
-    }
-
-    return null
-  }
 
   return (
     <BrowserRouter>
@@ -69,7 +35,6 @@ function App() {
         <AssistanceButton
           customerName={`${customer.firstName} ${customer.lastName}`}
           customerEmail={customer.email}
-          activeBooking={getActiveBooking()}
         />
       )}
     </BrowserRouter>

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import Header from '../components/Header'
 import { config } from '../config'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface LoginPageProps {
   onLogin: (customer: { id: number; firstName: string; lastName: string; email: string }) => void
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [step, setStep] = useState<'email' | 'code'>('email')
@@ -17,8 +19,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     e.preventDefault()
     setLoading(true)
     setError('')
-
-    // MOCK : on simule l'envoi du code
     setTimeout(() => {
       setStep('code')
       setLoading(false)
@@ -29,13 +29,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     e.preventDefault()
     setLoading(true)
     setError('')
-
-    // MOCK : on simule la vérification (n'importe quel code de 6 chiffres marche)
     setTimeout(() => {
       if (code.length === 6) {
         onLogin({ id: 1, firstName: 'Juan', lastName: 'García', email })
       } else {
-        setError('El código debe tener 6 dígitos')
+        setError(t('login.codeError'))
       }
       setLoading(false)
     }, 1000)
@@ -47,12 +45,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       <div className="max-w-md mx-auto mt-16 px-4">
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">
-            Mi Reserva
+            {t('login.title')}
           </h1>
           <p className="text-center text-gray-500 mb-8">
             {step === 'email'
-              ? 'Introduce tu email para acceder a tus reservas'
-              : `Hemos enviado un código a ${email}`}
+              ? t('login.subtitle')
+              : `${t('login.codeSent')} ${email}`}
           </p>
 
           {error && (
@@ -64,13 +62,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           {step === 'email' ? (
             <form onSubmit={handleSendCode}>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+                {t('login.email')}
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
+                placeholder={t('login.emailPlaceholder')}
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#abdee6] mb-4"
               />
@@ -80,13 +78,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 className="w-full py-3 rounded-lg font-semibold text-white transition-all"
                 style={{ backgroundColor: config.accentColor }}
               >
-                {loading ? 'Enviando...' : 'Enviar código'}
+                {loading ? t('login.sending') : t('login.sendCode')}
               </button>
             </form>
           ) : (
             <form onSubmit={handleVerifyCode}>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Código de verificación
+                {t('login.verificationCode')}
               </label>
               <input
                 type="text"
@@ -98,7 +96,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#abdee6] mb-2 text-center text-2xl tracking-[0.5em] font-mono"
               />
               <p className="text-xs text-gray-400 mb-4 text-center">
-                Introduce el código de 6 dígitos
+                {t('login.codeHint')}
               </p>
               <button
                 type="submit"
@@ -106,14 +104,14 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 className="w-full py-3 rounded-lg font-semibold text-white transition-all"
                 style={{ backgroundColor: config.accentColor }}
               >
-                {loading ? 'Verificando...' : 'Verificar'}
+                {loading ? t('login.verifying') : t('login.verify')}
               </button>
               <button
                 type="button"
                 onClick={() => { setStep('email'); setCode(''); setError('') }}
                 className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700"
               >
-                ← Cambiar email
+                {t('login.changeEmail')}
               </button>
             </form>
           )}

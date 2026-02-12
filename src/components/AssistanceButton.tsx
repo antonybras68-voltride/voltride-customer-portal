@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from '../i18n/useTranslation'
 
 const PHONE = '+34655489614'
 const PHONE_DISPLAY = '655 489 614'
@@ -19,6 +20,7 @@ interface AssistanceButtonProps {
 }
 
 export default function AssistanceButton({ customerName, customerEmail, activeBooking }: AssistanceButtonProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
 
@@ -39,12 +41,10 @@ export default function AssistanceButton({ customerName, customerEmail, activeBo
 
   const sendLocation = () => {
     setLocationStatus('loading')
-
     if (!navigator.geolocation) {
       setLocationStatus('error')
       return
     }
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords
@@ -54,9 +54,7 @@ export default function AssistanceButton({ customerName, customerEmail, activeBo
         window.open(whatsappUrl, '_blank')
         setLocationStatus('sent')
       },
-      () => {
-        setLocationStatus('error')
-      }
+      () => { setLocationStatus('error') }
     )
   }
 
@@ -77,60 +75,50 @@ export default function AssistanceButton({ customerName, customerEmail, activeBo
         className="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center z-50 transition-all"
         style={{ width: '72px', height: '72px', fontSize: '32px' }}
       >
-        {open ? '✕' : '🆘'}
+        {open ? 'X' : 'SOS'}
       </button>
 
       {open && (
         <div className="fixed bottom-28 right-6 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 z-50 overflow-hidden">
           <div className="bg-green-500 text-white px-5 py-4">
-            <h3 className="font-bold text-lg">Asistencia</h3>
-            <p className="text-sm text-green-100">Estamos aquí para ayudarte</p>
+            <h3 className="font-bold text-lg">{t('assistance.title')}</h3>
+            <p className="text-sm text-green-100">{t('assistance.subtitle')}</p>
           </div>
 
           {activeBooking && (
             <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
-              <p className="text-xs text-gray-500">Vehículo en curso</p>
+              <p className="text-xs text-gray-500">{t('assistance.currentVehicle')}</p>
               <p className="text-sm font-semibold text-gray-800">{activeBooking.vehicleName}</p>
               <p className="text-xs text-gray-500">Ref: {activeBooking.reference}</p>
             </div>
           )}
 
           <div className="p-5 space-y-3">
-            <button
-              onClick={sendLocation}
-              disabled={locationStatus === 'loading'}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all text-left"
-            >
-              <span className="text-2xl">📍</span>
+            <button onClick={sendLocation} disabled={locationStatus === 'loading'} className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all text-left">
+              <span className="text-2xl">GPS</span>
               <span>
-                <p className="font-semibold text-gray-800 text-sm">Enviar mi ubicación</p>
+                <p className="font-semibold text-gray-800 text-sm">{t('assistance.sendLocation')}</p>
                 <p className="text-xs text-gray-500">
-                  {locationStatus === 'loading' && 'Obteniendo ubicación...'}
-                  {locationStatus === 'sent' && '✅ Ubicación enviada'}
-                  {locationStatus === 'error' && '❌ No se pudo obtener la ubicación'}
-                  {locationStatus === 'idle' && 'Compartir por WhatsApp'}
+                  {locationStatus === 'loading' && t('assistance.gettingLocation')}
+                  {locationStatus === 'sent' && t('assistance.locationSent')}
+                  {locationStatus === 'error' && t('assistance.locationError')}
+                  {locationStatus === 'idle' && t('assistance.shareWhatsapp')}
                 </p>
               </span>
             </button>
 
-            <button
-              onClick={openWhatsApp}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-green-50 hover:bg-green-100 rounded-xl transition-all text-left"
-            >
-              <span className="text-2xl">💬</span>
+            <button onClick={openWhatsApp} className="w-full flex items-center gap-3 px-4 py-3 bg-green-50 hover:bg-green-100 rounded-xl transition-all text-left">
+              <span className="text-2xl">MSG</span>
               <span>
-                <p className="font-semibold text-gray-800 text-sm">Escribir por WhatsApp</p>
-                <p className="text-xs text-gray-500">Enviar un mensaje directo</p>
+                <p className="font-semibold text-gray-800 text-sm">{t('assistance.writeWhatsapp')}</p>
+                <p className="text-xs text-gray-500">{t('assistance.directMessage')}</p>
               </span>
             </button>
 
-            <button
-              onClick={callPhone}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-orange-50 hover:bg-orange-100 rounded-xl transition-all text-left"
-            >
-              <span className="text-2xl">📞</span>
+            <button onClick={callPhone} className="w-full flex items-center gap-3 px-4 py-3 bg-orange-50 hover:bg-orange-100 rounded-xl transition-all text-left">
+              <span className="text-2xl">TEL</span>
               <span>
-                <p className="font-semibold text-gray-800 text-sm">Llamar</p>
+                <p className="font-semibold text-gray-800 text-sm">{t('assistance.call')}</p>
                 <p className="text-xs text-gray-500">{PHONE_DISPLAY}</p>
               </span>
             </button>

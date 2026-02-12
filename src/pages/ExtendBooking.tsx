@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import { mockBookings } from '../mock/data'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface ExtendBookingProps {
   customer: { id: number; firstName: string; lastName: string; email: string }
@@ -13,6 +14,7 @@ type Step = 'form' | 'checking' | 'available' | 'unavailable' | 'payment' | 'suc
 export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { t, formatDate } = useTranslation()
   const booking = mockBookings.find(b => b.id === Number(id))
 
   const [newEndDate, setNewEndDate] = useState(booking?.endDate || '')
@@ -26,9 +28,9 @@ export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps
       <div className="min-h-screen bg-gray-50">
         <Header customerName={customer.firstName} onLogout={onLogout} />
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <p className="text-gray-500">Reserva no encontrada</p>
+          <p className="text-gray-500">{t('detail.notFound')}</p>
           <button onClick={() => navigate('/reservas')} className="mt-4 text-[#ffaf10] underline">
-            Volver a mis reservas
+            {t('detail.backToList')}
           </button>
         </div>
       </div>
@@ -43,10 +45,8 @@ export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps
   const originalDays = calculateDays(booking.startDate, booking.endDate)
   const newTotalDays = calculateDays(booking.startDate, newEndDate)
   const extraDays = newTotalDays - originalDays
-
   const pricePerDay = booking.totalPrice / originalDays
   const extensionPrice = Math.round(extraDays * pricePerDay)
-
   const isValidExtension = newEndDate > booking.endDate || (newEndDate === booking.endDate && newEndTime > booking.endTime)
 
   const checkAvailability = () => {
@@ -70,81 +70,63 @@ export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps
       <Header customerName={customer.firstName} onLogout={onLogout} />
       <div className="max-w-lg mx-auto px-4 py-8">
         <button onClick={() => navigate(`/reservas/${booking.id}`)} className="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">
-          ← Volver al detalle
+          {t('extend.back')}
         </button>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
 
           {step === 'form' && (
             <>
-              <h1 className="text-xl font-bold text-gray-800 mb-1">Prolongar reserva</h1>
-              <p className="text-sm text-gray-500 mb-6">
-                {booking.fleetVehicle.vehicle.name.es} — Ref: {booking.reference}
-              </p>
+              <h1 className="text-xl font-bold text-gray-800 mb-1">{t('extend.title')}</h1>
+              <p className="text-sm text-gray-500 mb-6">{booking.fleetVehicle.vehicle.name.es} — {t('bookings.ref')} {booking.reference}</p>
 
               <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                <p className="text-xs text-gray-500 mb-2">Reserva actual</p>
+                <p className="text-xs text-gray-500 mb-2">{t('extend.currentBooking')}</p>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Inicio</span>
-                  <span className="font-medium">{booking.startDate} a las {booking.startTime}</span>
+                  <span className="text-gray-600">{t('extend.start')}</span>
+                  <span className="font-medium">{formatDate(booking.startDate)} {t('detail.at')} {booking.startTime}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Fin prevista</span>
-                  <span className="font-medium">{booking.endDate} a las {booking.endTime}</span>
+                  <span className="text-gray-600">{t('extend.expectedEnd')}</span>
+                  <span className="font-medium">{formatDate(booking.endDate)} {t('detail.at')} {booking.endTime}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Duracion</span>
-                  <span className="font-medium">{originalDays} dia{originalDays > 1 ? 's' : ''}</span>
+                  <span className="text-gray-600">{t('extend.duration')}</span>
+                  <span className="font-medium">{originalDays} {t('modify.days')}</span>
                 </div>
               </div>
 
-              <p className="text-sm font-medium text-gray-700 mb-3">Nueva fecha de devolucion</p>
+              <p className="text-sm font-medium text-gray-700 mb-3">{t('extend.newEndDate')}</p>
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Fecha fin</label>
-                  <input
-                    type="date"
-                    value={newEndDate}
-                    onChange={(e) => setNewEndDate(e.target.value)}
-                    min={booking.endDate}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#abdee6]"
-                  />
+                  <label className="block text-xs text-gray-500 mb-1">{t('extend.endDate')}</label>
+                  <input type="date" value={newEndDate} onChange={(e) => setNewEndDate(e.target.value)} min={booking.endDate} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#abdee6]" />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Hora fin</label>
-                  <input
-                    type="time"
-                    value={newEndTime}
-                    onChange={(e) => setNewEndTime(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#abdee6]"
-                  />
+                  <label className="block text-xs text-gray-500 mb-1">{t('extend.endTime')}</label>
+                  <input type="time" value={newEndTime} onChange={(e) => setNewEndTime(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#abdee6]" />
                 </div>
               </div>
 
               {isValidExtension && extraDays > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Dias adicionales</span>
-                    <span className="font-medium">+{extraDays} dia{extraDays > 1 ? 's' : ''}</span>
+                    <span className="text-gray-600">{t('extend.extraDays')}</span>
+                    <span className="font-medium">+{extraDays} {t('modify.days')}</span>
                   </div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Nueva duracion total</span>
-                    <span className="font-medium">{newTotalDays} dia{newTotalDays > 1 ? 's' : ''}</span>
+                    <span className="text-gray-600">{t('extend.newTotalDuration')}</span>
+                    <span className="font-medium">{newTotalDays} {t('modify.days')}</span>
                   </div>
                   <div className="border-t border-amber-200 mt-2 pt-2 flex justify-between font-semibold">
-                    <span>Coste prolongacion</span>
+                    <span>{t('extend.extensionCost')}</span>
                     <span className="text-lg" style={{ color: '#ffaf10' }}>{extensionPrice}€</span>
                   </div>
                 </div>
               )}
 
-              <button
-                onClick={checkAvailability}
-                disabled={!isValidExtension || extraDays <= 0}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#ffaf10' }}
-              >
-                Verificar disponibilidad
+              <button onClick={checkAvailability} disabled={!isValidExtension || extraDays <= 0} className="w-full py-3 rounded-lg font-semibold text-white transition-all disabled:opacity-50" style={{ backgroundColor: '#ffaf10' }}>
+                {t('extend.checkAvailability')}
               </button>
             </>
           )}
@@ -152,25 +134,18 @@ export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps
           {step === 'checking' && (
             <div className="text-center py-12">
               <div className="text-4xl mb-4">...</div>
-              <h2 className="text-lg font-bold text-gray-800 mb-2">Verificando disponibilidad...</h2>
-              <p className="text-sm text-gray-500">Comprobando que el vehiculo esta libre para las nuevas fechas</p>
+              <h2 className="text-lg font-bold text-gray-800 mb-2">{t('extend.checking')}</h2>
+              <p className="text-sm text-gray-500">{t('extend.checkingMsg')}</p>
             </div>
           )}
 
           {step === 'unavailable' && (
             <div className="text-center py-12">
               <div className="text-5xl mb-4">X</div>
-              <h2 className="text-lg font-bold text-gray-800 mb-2">Vehiculo no disponible</h2>
-              <p className="text-sm text-gray-500 mb-6">
-                Lo sentimos, el vehiculo ya esta reservado para las fechas seleccionadas.
-                Puede intentar con otras fechas.
-              </p>
-              <button
-                onClick={() => setStep('form')}
-                className="w-full py-3 rounded-lg font-semibold text-white"
-                style={{ backgroundColor: '#ffaf10' }}
-              >
-                Elegir otras fechas
+              <h2 className="text-lg font-bold text-gray-800 mb-2">{t('extend.unavailable')}</h2>
+              <p className="text-sm text-gray-500 mb-6">{t('extend.unavailableMsg')}</p>
+              <button onClick={() => setStep('form')} className="w-full py-3 rounded-lg font-semibold text-white" style={{ backgroundColor: '#ffaf10' }}>
+                {t('extend.chooseDates')}
               </button>
             </div>
           )}
@@ -179,46 +154,39 @@ export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps
             <>
               <div className="text-center mb-6">
                 <div className="text-5xl mb-3">OK</div>
-                <h2 className="text-lg font-bold text-gray-800">Vehiculo disponible</h2>
-                <p className="text-sm text-gray-500">Puede prolongar su reserva</p>
+                <h2 className="text-lg font-bold text-gray-800">{t('extend.available')}</h2>
+                <p className="text-sm text-gray-500">{t('extend.availableMsg')}</p>
               </div>
 
               <div className="bg-gray-50 rounded-xl p-4 mb-6">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Nueva fecha de fin</span>
-                  <span className="font-medium">{newEndDate} a las {newEndTime}</span>
+                  <span className="text-gray-600">{t('extend.newEnd')}</span>
+                  <span className="font-medium">{formatDate(newEndDate)} {t('detail.at')} {newEndTime}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Dias adicionales</span>
+                  <span className="text-gray-600">{t('extend.extraDays')}</span>
                   <span className="font-medium">+{extraDays}</span>
                 </div>
                 <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between font-semibold">
-                  <span>Importe a pagar</span>
+                  <span>{t('extend.amountToPay')}</span>
                   <span className="text-lg" style={{ color: '#ffaf10' }}>{extensionPrice}€</span>
                 </div>
               </div>
 
-              <p className="text-sm font-medium text-gray-700 mb-3">Como desea pagar?</p>
+              <p className="text-sm font-medium text-gray-700 mb-3">{t('extend.howToPay')}</p>
               <div className="space-y-3 mb-6">
-                <button
-                  onClick={() => { setPaymentMethod('stripe'); setStep('payment') }}
-                  className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-gray-300 text-left transition-all"
-                >
+                <button onClick={() => { setPaymentMethod('stripe'); setStep('payment') }} className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-gray-300 text-left transition-all">
                   <span className="text-2xl">CARD</span>
                   <span>
-                    <p className="font-semibold text-gray-800 text-sm">Pagar ahora con tarjeta</p>
-                    <p className="text-xs text-gray-500">Pago seguro por Stripe — {extensionPrice}€</p>
+                    <p className="font-semibold text-gray-800 text-sm">{t('extend.payNow')}</p>
+                    <p className="text-xs text-gray-500">{t('extend.payNowDesc')} {extensionPrice}€</p>
                   </span>
                 </button>
-
-                <button
-                  onClick={() => { setPaymentMethod('agency'); setStep('payment') }}
-                  className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-gray-300 text-left transition-all"
-                >
+                <button onClick={() => { setPaymentMethod('agency'); setStep('payment') }} className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-gray-300 text-left transition-all">
                   <span className="text-2xl">SHOP</span>
                   <span>
-                    <p className="font-semibold text-gray-800 text-sm">Pagar en agencia al devolver</p>
-                    <p className="text-xs text-gray-500">El importe de {extensionPrice}€ se cobrara al check-out</p>
+                    <p className="font-semibold text-gray-800 text-sm">{t('extend.payAgency')}</p>
+                    <p className="text-xs text-gray-500">{t('extend.payAgencyDesc')} {extensionPrice}€ {t('extend.payAgencyDescEnd')}</p>
                   </span>
                 </button>
               </div>
@@ -227,56 +195,38 @@ export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps
 
           {step === 'payment' && (
             <>
-              <h2 className="text-lg font-bold text-gray-800 mb-4">Confirmar prolongacion</h2>
-
+              <h2 className="text-lg font-bold text-gray-800 mb-4">{t('extend.confirmTitle')}</h2>
               <div className="bg-gray-50 rounded-xl p-4 mb-4">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Vehiculo</span>
+                  <span className="text-gray-600">{t('extend.vehicle')}</span>
                   <span className="font-medium">{booking.fleetVehicle.vehicle.name.es}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Nueva fecha de fin</span>
-                  <span className="font-medium">{newEndDate} a las {newEndTime}</span>
+                  <span className="text-gray-600">{t('extend.newEnd')}</span>
+                  <span className="font-medium">{formatDate(newEndDate)} {t('detail.at')} {newEndTime}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Dias adicionales</span>
+                  <span className="text-gray-600">{t('extend.extraDays')}</span>
                   <span className="font-medium">+{extraDays}</span>
                 </div>
                 <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between font-semibold">
-                  <span>Importe</span>
+                  <span>{t('extend.amount')}</span>
                   <span style={{ color: '#ffaf10' }}>{extensionPrice}€</span>
                 </div>
               </div>
-
               <div className="bg-blue-50 rounded-xl p-4 mb-6">
                 {paymentMethod === 'stripe' ? (
-                  <p className="text-sm text-blue-800">
-                    Se realizara un cargo de <strong>{extensionPrice}€</strong> en su tarjeta ahora.
-                    Un nuevo contrato sera generado con las nuevas fechas.
-                  </p>
+                  <p className="text-sm text-blue-800">{t('extend.stripeMsg')} <strong>{extensionPrice}€</strong> {t('extend.stripeMsgEnd')}</p>
                 ) : (
-                  <p className="text-sm text-blue-800">
-                    El importe de <strong>{extensionPrice}€</strong> sera cobrado en agencia al devolver el vehiculo.
-                    El operador tendra la informacion del pago pendiente al hacer el check-out.
-                    Un nuevo contrato sera generado con las nuevas fechas.
-                  </p>
+                  <p className="text-sm text-blue-800">{t('extend.agencyMsg')} <strong>{extensionPrice}€</strong> {t('extend.agencyMsgMid')}</p>
                 )}
               </div>
-
               <div className="flex gap-3">
-                <button
-                  onClick={() => setStep('available')}
-                  className="flex-1 py-3 rounded-lg font-semibold border-2 border-gray-300 text-gray-600 hover:bg-gray-50"
-                >
-                  Atras
+                <button onClick={() => setStep('available')} className="flex-1 py-3 rounded-lg font-semibold border-2 border-gray-300 text-gray-600 hover:bg-gray-50">
+                  {t('extend.back2')}
                 </button>
-                <button
-                  onClick={confirmExtension}
-                  disabled={loading}
-                  className="flex-1 py-3 rounded-lg font-semibold text-white transition-all"
-                  style={{ backgroundColor: '#ffaf10' }}
-                >
-                  {loading ? 'Procesando...' : 'Confirmar'}
+                <button onClick={confirmExtension} disabled={loading} className="flex-1 py-3 rounded-lg font-semibold text-white transition-all" style={{ backgroundColor: '#ffaf10' }}>
+                  {loading ? t('extend.processing') : t('extend.confirmBtn')}
                 </button>
               </div>
             </>
@@ -285,43 +235,36 @@ export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps
           {step === 'success' && (
             <div className="text-center py-8">
               <div className="text-5xl mb-4">OK</div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Reserva prolongada</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">{t('extend.success')}</h2>
               <p className="text-sm text-gray-500 mb-6">
                 {paymentMethod === 'stripe'
-                  ? `El pago de ${extensionPrice}€ ha sido procesado correctamente.`
-                  : `El importe de ${extensionPrice}€ sera cobrado en agencia al devolver el vehiculo.`
+                  ? `${t('extend.stripePaid')} ${extensionPrice}€ ${t('extend.stripePaidEnd')}`
+                  : `${t('extend.agencyPending')} ${extensionPrice}€ ${t('extend.agencyPendingEnd')}`
                 }
               </p>
-
               <div className="bg-gray-50 rounded-xl p-4 mb-6 text-sm text-left">
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-500">Nueva fecha de fin</span>
-                  <span className="font-medium">{newEndDate} a las {newEndTime}</span>
+                  <span className="text-gray-500">{t('extend.newEnd')}</span>
+                  <span className="font-medium">{formatDate(newEndDate)} {t('detail.at')} {newEndTime}</span>
                 </div>
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-500">Duracion total</span>
-                  <span className="font-medium">{newTotalDays} dia{newTotalDays > 1 ? 's' : ''}</span>
+                  <span className="text-gray-500">{t('extend.totalDuration')}</span>
+                  <span className="font-medium">{newTotalDays} {t('modify.days')}</span>
                 </div>
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-500">Metodo de pago</span>
-                  <span className="font-medium">{paymentMethod === 'stripe' ? 'Tarjeta (pagado)' : 'En agencia (pendiente)'}</span>
+                  <span className="text-gray-500">{t('extend.paymentMethod')}</span>
+                  <span className="font-medium">{paymentMethod === 'stripe' ? t('extend.cardPaid') : t('extend.agencyPendingLabel')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Nuevo contrato</span>
+                  <span className="text-gray-500">{t('extend.newContract')}</span>
                   <span className="font-medium text-[#ffaf10]">CTR-2026-003-EXT</span>
                 </div>
               </div>
-
               <button className="w-full py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 mb-3">
-                Descargar nuevo contrato (PDF)
+                {t('extend.downloadContract')}
               </button>
-
-              <button
-                onClick={() => navigate(`/reservas/${booking.id}`)}
-                className="w-full py-3 rounded-lg font-semibold text-white"
-                style={{ backgroundColor: '#ffaf10' }}
-              >
-                Volver a mi reserva
+              <button onClick={() => navigate(`/reservas/${booking.id}`)} className="w-full py-3 rounded-lg font-semibold text-white" style={{ backgroundColor: '#ffaf10' }}>
+                {t('extend.backToBooking')}
               </button>
             </div>
           )}

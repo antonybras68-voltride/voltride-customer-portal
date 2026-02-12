@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import StatusBadge from '../components/StatusBadge'
 import { mockBookings } from '../mock/data'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface BookingDetailProps {
   customer: { id: number; firstName: string; lastName: string; email: string }
@@ -11,6 +12,7 @@ interface BookingDetailProps {
 export default function BookingDetail({ customer, onLogout }: BookingDetailProps) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { t, formatDate } = useTranslation()
   const booking = mockBookings.find(b => b.id === Number(id))
 
   if (!booking) {
@@ -18,9 +20,9 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
       <div className="min-h-screen bg-gray-50">
         <Header customerName={customer.firstName} onLogout={onLogout} />
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <p className="text-gray-500">Reserva no encontrada</p>
+          <p className="text-gray-500">{t('detail.notFound')}</p>
           <button onClick={() => navigate('/reservas')} className="mt-4 text-[#ffaf10] underline">
-            Volver a mis reservas
+            {t('detail.backToList')}
           </button>
         </div>
       </div>
@@ -40,44 +42,44 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
       <Header customerName={customer.firstName} onLogout={onLogout} />
       <div className="max-w-2xl mx-auto px-4 py-8">
         <button onClick={() => navigate('/reservas')} className="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">
-          ← Mis reservas
+          {t('detail.back')}
         </button>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex justify-between items-start mb-6">
             <div>
               <h1 className="text-xl font-bold text-gray-800">{booking.fleetVehicle.vehicle.name.es}</h1>
-              <p className="text-sm text-gray-500">Ref: {booking.reference}</p>
+              <p className="text-sm text-gray-500">{t('bookings.ref')} {booking.reference}</p>
             </div>
-            <StatusBadge status={booking.status} />
+            <StatusBadge status={booking.checkedIn && !booking.checkedOut ? 'IN_PROGRESS' : booking.status} />
           </div>
 
           <div className="space-y-4 mb-6">
             <div className="flex justify-between py-3 border-b border-gray-100">
-              <span className="text-gray-500">Fecha inicio</span>
-              <span className="font-medium">{booking.startDate} a las {booking.startTime}</span>
+              <span className="text-gray-500">{t('detail.startDate')}</span>
+              <span className="font-medium">{formatDate(booking.startDate)} {t('detail.at')} {booking.startTime}</span>
             </div>
             <div className="flex justify-between py-3 border-b border-gray-100">
-              <span className="text-gray-500">Fecha fin</span>
-              <span className="font-medium">{booking.endDate} a las {booking.endTime}</span>
+              <span className="text-gray-500">{t('detail.endDate')}</span>
+              <span className="font-medium">{formatDate(booking.endDate)} {t('detail.at')} {booking.endTime}</span>
             </div>
             <div className="flex justify-between py-3 border-b border-gray-100">
-              <span className="text-gray-500">Precio total</span>
+              <span className="text-gray-500">{t('detail.totalPrice')}</span>
               <span className="font-bold text-lg">{booking.totalPrice}€</span>
             </div>
             <div className="flex justify-between py-3 border-b border-gray-100">
-              <span className="text-gray-500">Pagado</span>
+              <span className="text-gray-500">{t('detail.paid')}</span>
               <span className="font-medium text-green-600">{booking.paidAmount}€</span>
             </div>
             <div className="flex justify-between py-3 border-b border-gray-100">
-              <span className="text-gray-500">Fianza</span>
+              <span className="text-gray-500">{t('detail.deposit')}</span>
               <span className="font-medium">{booking.depositAmount}€</span>
             </div>
           </div>
 
           {booking.options.length > 0 && (
             <div className="mb-6">
-              <h3 className="font-semibold text-gray-700 mb-2">Opciones</h3>
+              <h3 className="font-semibold text-gray-700 mb-2">{t('detail.options')}</h3>
               {booking.options.map((opt, i) => (
                 <div key={i} className="flex justify-between text-sm py-1">
                   <span className="text-gray-600">{opt.option.name} x{opt.quantity}</span>
@@ -89,7 +91,7 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
 
           {booking.contract && (
             <button className="w-full py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 mb-3">
-              Descargar contrato ({booking.contract.contractNumber})
+              {t('detail.downloadContract')} ({booking.contract.contractNumber})
             </button>
           )}
 
@@ -101,22 +103,22 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
                   className="flex-1 py-3 rounded-lg font-semibold text-white"
                   style={{ backgroundColor: '#ffaf10' }}
                 >
-                  Modificar fechas
+                  {t('detail.modify')}
                 </button>
               )}
               {canCancel && (
                 <button
                   onClick={() => {
                     const message = refundable
-                      ? `Su reserva será cancelada y recibirá un reembolso completo de ${booking.paidAmount}€`
-                      : `Su reserva será cancelada. El anticipo de ${booking.paidAmount}€ no será reembolsado (cancelación con menos de 48h de antelación)`
-                    if (confirm(message + '\n\n¿Confirmar cancelación?')) {
-                      alert('Reserva cancelada (mock)')
+                      ? `${t('detail.cancelRefund')} ${booking.paidAmount}€`
+                      : `${t('detail.cancelNoRefund')} ${booking.paidAmount}€ ${t('detail.cancelNoRefundEnd')}`
+                    if (confirm(message + `\n\n${t('detail.cancelConfirm')}`)) {
+                      alert(t('detail.cancelDone'))
                     }
                   }}
                   className="flex-1 py-3 rounded-lg font-semibold border-2 border-red-400 text-red-500 hover:bg-red-50"
                 >
-                  Cancelar reserva
+                  {t('detail.cancel')}
                 </button>
               )}
             </div>
@@ -125,7 +127,7 @@ export default function BookingDetail({ customer, onLogout }: BookingDetailProps
                 onClick={() => navigate(`/reservas/${booking.id}/prolongar`)}
                 className="w-full py-3 rounded-lg font-semibold border-2 border-[#abdee6] text-[#abdee6] hover:bg-cyan-50"
               >
-                Prolongar reserva
+                {t('detail.extend')}
               </button>
             )}
           </div>

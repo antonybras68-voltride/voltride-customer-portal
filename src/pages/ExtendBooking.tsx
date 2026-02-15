@@ -25,6 +25,7 @@ export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [pricing, setPricing] = useState<any>(null)
+  const [agencyPaymentAvailable, setAgencyPaymentAvailable] = useState(true)
   const [extensionResult, setExtensionResult] = useState<any>(null)
 
   useEffect(() => {
@@ -92,6 +93,7 @@ export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps
     try {
       const result = await checkExtendAvailability(booking.id, newEndDate, newEndTime)
       setPricing(result.pricing)
+      setAgencyPaymentAvailable(result.agencyPaymentAvailable !== false)
       setStep(result.available ? 'available' : 'unavailable')
     } catch (err: any) {
       setError(err.message)
@@ -237,13 +239,13 @@ export default function ExtendBooking({ customer, onLogout }: ExtendBookingProps
                     <p className="text-xs text-gray-500">{t('extend.payNowDesc')} {extensionPrice}€</p>
                   </span>
                 </button>
-                <button onClick={() => { setPaymentMethod('agency'); setStep('payment') }} className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-gray-300 text-left transition-all">
+                {agencyPaymentAvailable && (<button onClick={() => { setPaymentMethod('agency'); setStep('payment') }} className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-gray-300 text-left transition-all">
                   <span className="text-2xl">🏪</span>
                   <span>
                     <p className="font-semibold text-gray-800 text-sm">{t('extend.payAgency')}</p>
                     <p className="text-xs text-gray-500">{t('extend.payAgencyDesc')} {extensionPrice}€ {t('extend.payAgencyDescEnd')}</p>
                   </span>
-                </button>
+                </button>)}
               </div>
             </>
           )}
